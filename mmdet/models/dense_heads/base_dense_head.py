@@ -482,8 +482,14 @@ class BaseDenseHead(BaseModule, metaclass=ABCMeta):
         # TODO: deal with `with_nms` and `nms_cfg=None` in test_cfg
         if with_nms and results.bboxes.numel() > 0:
             bboxes = get_box_tensor(results.bboxes)
-            det_bboxes, keep_idxs = batched_nms(bboxes, results.scores,
-                                                results.labels, cfg.nms)
+            if bboxes.size(-1) == 5:
+                from mmdet.models.layers.rotated_nms import \
+                    batched_nms_rotated
+                det_bboxes, keep_idxs = batched_nms_rotated(
+                    bboxes, results.scores, results.labels, cfg.nms)
+            else:
+                det_bboxes, keep_idxs = batched_nms(bboxes, results.scores,
+                                                    results.labels, cfg.nms)
             results = results[keep_idxs]
             # some nms would reweight the score, such as softnms
             results.scores = det_bboxes[:, -1]

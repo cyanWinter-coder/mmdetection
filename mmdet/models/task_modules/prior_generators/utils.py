@@ -32,11 +32,19 @@ def anchor_inside_flags(flat_anchors: Tensor,
                                        all_inside=True,
                                        allowed_border=allowed_border)
         else:
-            inside_flags = valid_flags & \
-                (flat_anchors[:, 0] >= -allowed_border) & \
-                (flat_anchors[:, 1] >= -allowed_border) & \
-                (flat_anchors[:, 2] < img_w + allowed_border) & \
-                (flat_anchors[:, 3] < img_h + allowed_border)
+            if flat_anchors.size(-1) == 5:
+                # Rotated anchors are represented by their centers.
+                inside_flags = valid_flags & \
+                    (flat_anchors[:, 0] >= -allowed_border) & \
+                    (flat_anchors[:, 1] >= -allowed_border) & \
+                    (flat_anchors[:, 0] <= img_w + allowed_border) & \
+                    (flat_anchors[:, 1] <= img_h + allowed_border)
+            else:
+                inside_flags = valid_flags & \
+                    (flat_anchors[:, 0] >= -allowed_border) & \
+                    (flat_anchors[:, 1] >= -allowed_border) & \
+                    (flat_anchors[:, 2] < img_w + allowed_border) & \
+                    (flat_anchors[:, 3] < img_h + allowed_border)
     else:
         inside_flags = valid_flags
     return inside_flags

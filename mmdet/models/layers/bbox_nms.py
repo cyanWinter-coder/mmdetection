@@ -7,6 +7,13 @@ from torch import Tensor
 
 from mmdet.structures.bbox import bbox_overlaps
 from mmdet.utils import ConfigType
+from .rotated_nms import (batched_nms_rotated, multiclass_nms_rotated,
+                          nms_rotated)
+
+__all__ = [
+    'multiclass_nms', 'fast_nms', 'nms_rotated', 'batched_nms_rotated',
+    'multiclass_nms_rotated'
+]
 
 
 def multiclass_nms(
@@ -35,13 +42,18 @@ def multiclass_nms(
             before applying NMS. Default to None.
         return_inds (bool, optional): Whether return the indices of kept
             bboxes. Default to False.
-        box_dim (int): The dimension of boxes. Defaults to 4.
+        box_dim (int): The dimension of boxes. Use 4 for horizontal boxes
+            and 5 for rotated boxes in (cx, cy, w, h, angle) format.
+            Defaults to 4.
 
     Returns:
         Union[Tuple[Tensor, Tensor, Tensor], Tuple[Tensor, Tensor]]:
             (dets, labels, indices (optional)), tensors of shape (k, 5),
             (k), and (k). Dets are boxes with scores. Labels are 0-based.
     """
+    if box_dim < 1:
+        raise ValueError(f'box_dim must be positive, but got {box_dim}. '
+                         f'multi_bboxes shape: {tuple(multi_bboxes.shape)}.')
     num_classes = multi_scores.size(1) - 1
     # exclude background category
     if multi_bboxes.shape[1] > box_dim:
@@ -93,7 +105,10 @@ def multiclass_nms(
         else:
             return dets, labels
 
-    dets, keep = batched_nms(bboxes, scores, labels, nms_cfg)
+    if box_dim == 5:
+        dets, keep = batched_nms_rotated(bboxes, scores, labels, nms_cfg)
+    else:
+        dets, keep = batched_nms(bboxes, scores, labels, nms_cfg)
 
     if max_num > 0:
         dets = dets[:max_num]

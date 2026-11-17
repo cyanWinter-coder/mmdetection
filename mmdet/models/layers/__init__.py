@@ -16,6 +16,12 @@ from .positional_encoding import (LearnedPositionalEncoding,
                                   SinePositionalEncoding,
                                   SinePositionalEncoding3D)
 from .res_layer import ResLayer, SimplifiedBasicBlock
+from .rotated_box_iou import (box_iou_rotated, norm_angle, normalize_angle,
+                              normalize_rotated_boxes, rbbox_overlaps,
+                              rbox_overlaps, rotated_box_iou,
+                              rotated_box_to_corners)
+from .rotated_nms import (batched_nms_rotated, multiclass_nms_rotated,
+                          nms_rotated, rotated_batched_nms, rotated_nms)
 from .se_layer import ChannelAttention, DyReLU, SELayer
 # yapf: disable
 from .transformer import (MLP, AdaptivePadding, CdnQueryGenerator,
@@ -61,5 +67,9 @@ __all__ = [
     'ConditionalDetrTransformerDecoderLayer', 'DinoTransformerDecoder',
     'CdnQueryGenerator', 'Mask2FormerTransformerEncoder',
     'Mask2FormerTransformerDecoderLayer', 'Mask2FormerTransformerDecoder',
-    'SinePositionalEncoding3D', 'FrozenBatchNorm2d'
+    'SinePositionalEncoding3D', 'FrozenBatchNorm2d', 'box_iou_rotated',
+    'rbox_overlaps', 'rbbox_overlaps', 'rotated_box_iou',
+    'rotated_box_to_corners', 'normalize_angle', 'norm_angle',
+    'normalize_rotated_boxes', 'nms_rotated', 'batched_nms_rotated',
+    'multiclass_nms_rotated', 'rotated_nms', 'rotated_batched_nms'
 ]

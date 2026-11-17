@@ -86,3 +86,59 @@ class BboxOverlaps2D_GLIP(BboxOverlaps2D):
 
         iou = inter / (area1[:, None] + area2 - inter)
         return iou
+
+
+@TASK_UTILS.register_module()
+class RotatedBboxOverlaps2D:
+    """2D IoU/IoF calculator for rotated boxes.
+
+    Boxes use ``(cx, cy, w, h, angle)`` format. Tensors with six values per
+    row are accepted for compatibility with detection heads that append a
+    score; the last value is ignored.
+
+    Args:
+        angle_unit (str): ``'radian'`` or ``'degree'``.
+        clockwise (bool): Positive-angle direction convention.
+    """
+
+    def __init__(self,
+                 angle_unit: str = 'radian',
+                 clockwise: bool = True) -> None:
+        if angle_unit not in ('radian', 'degree'):
+            raise ValueError("angle_unit must be either 'radian' or 'degree', "
+                             f'but got {angle_unit!r}.')
+        self.angle_unit = angle_unit
+        self.clockwise = clockwise
+
+    def __call__(self,
+                 bboxes1,
+                 bboxes2,
+                 mode: str = 'iou',
+                 is_aligned: bool = False,
+                 eps: float = 1e-6):
+        bboxes1 = get_box_tensor(bboxes1)
+        bboxes2 = get_box_tensor(bboxes2)
+        if bboxes1.size(-1) not in (5, 6) or bboxes2.size(-1) not in (5, 6):
+            raise ValueError(
+                'RotatedBboxOverlaps2D expects boxes with 5 or 6 values '
+                f'per row, but got {tuple(bboxes1.shape)} and '
+                f'{tuple(bboxes2.shape)}.')
+        bboxes1 = bboxes1[..., :5]
+        bboxes2 = bboxes2[..., :5]
+        from mmdet.models.layers.rotated_box_iou import box_iou_rotated
+        return box_iou_rotated(
+            bboxes1,
+            bboxes2,
+            mode=mode,
+            aligned=is_aligned,
+            clockwise=self.clockwise,
+            angle_unit=self.angle_unit,
+            eps=eps)
+
+    def __repr__(self) -> str:
+        return (f'{self.__class__.__name__}('
+                f'angle_unit={self.angle_unit!r}, '
+                f'clockwise={self.clockwise})')
+
+
+RBboxOverlaps2D = RotatedBboxOverlaps2D

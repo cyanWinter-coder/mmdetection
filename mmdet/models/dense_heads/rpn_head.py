@@ -281,8 +281,14 @@ class RPNHead(AnchorHead):
 
         if results.bboxes.numel() > 0:
             bboxes = get_box_tensor(results.bboxes)
-            det_bboxes, keep_idxs = batched_nms(bboxes, results.scores,
-                                                results.level_ids, cfg.nms)
+            if bboxes.size(-1) == 5:
+                from mmdet.models.layers.rotated_nms import \
+                    batched_nms_rotated
+                det_bboxes, keep_idxs = batched_nms_rotated(
+                    bboxes, results.scores, results.level_ids, cfg.nms)
+            else:
+                det_bboxes, keep_idxs = batched_nms(bboxes, results.scores,
+                                                    results.level_ids, cfg.nms)
             results = results[keep_idxs]
             # some nms would reweight the score, such as softnms
             results.scores = det_bboxes[:, -1]

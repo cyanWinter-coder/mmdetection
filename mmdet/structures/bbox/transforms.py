@@ -8,6 +8,26 @@ from torch import Tensor
 from mmdet.structures.bbox import BaseBoxes
 
 
+def norm_angle(angle: Tensor, angle_range: str) -> Tensor:
+    """Wrap rotated-box angles into a standard interval.
+
+    This follows the MMRotate convention and expects radians. ``'oc'`` leaves
+    angles unchanged; callers should swap width/height when using that
+    convention.
+    """
+    if angle_range == 'oc':
+        return angle
+    if angle_range == 'le135':
+        return torch.remainder(angle + np.pi / 4, np.pi) - np.pi / 4
+    if angle_range == 'le90':
+        return torch.remainder(angle + np.pi / 2, np.pi) - np.pi / 2
+    if angle_range == 'r360':
+        return torch.remainder(angle + np.pi, 2 * np.pi) - np.pi
+    raise ValueError(
+        "angle_range must be one of 'oc', 'le135', 'le90' or 'r360', "
+        f'but got {angle_range!r}.')
+
+
 def find_inside_bboxes(bboxes: Tensor, img_h: int, img_w: int) -> Tensor:
     """Find bboxes as long as a part of bboxes is inside the image.
 
@@ -408,7 +428,13 @@ def scale_boxes(boxes: Union[Tensor, BaseBoxes],
         boxes.rescale_(scale_factor)
         return boxes
     else:
-        # Tensor boxes will be treated as horizontal boxes
+        if boxes.size(-1) == 5:
+            scaled = boxes.clone()
+            scale = boxes.new_tensor(scale_factor)
+            scaled[..., :2] = scaled[..., :2] * scale
+            scaled[..., 2:4] = scaled[..., 2:4] * scale
+            return scaled
+        # Other tensor boxes are treated as horizontal coordinate tuples.
         repeat_num = int(boxes.size(-1) / 2)
         scale_factor = boxes.new_tensor(scale_factor).repeat((1, repeat_num))
         return boxes * scale_factor
@@ -428,9 +454,13 @@ def get_box_wh(boxes: Union[Tensor, BaseBoxes]) -> Tuple[Tensor, Tensor]:
         w = boxes.widths
         h = boxes.heights
     else:
-        # Tensor boxes will be treated as horizontal boxes by defaults
-        w = boxes[:, 2] - boxes[:, 0]
-        h = boxes[:, 3] - boxes[:, 1]
+        if boxes.size(-1) == 5:
+            w = boxes[..., 2]
+            h = boxes[..., 3]
+        else:
+            # Tensor boxes are treated as horizontal boxes by default.
+            w = boxes[..., 2] - boxes[..., 0]
+            h = boxes[..., 3] - boxes[..., 1]
     return w, h
 
 
@@ -463,8 +493,8 @@ def empty_box_as(boxes: Union[Tensor, BaseBoxes]) -> Union[Tensor, BaseBoxes]:
     if isinstance(boxes, BaseBoxes):
         return boxes.empty_boxes()
     else:
-        # Tensor boxes will be treated as horizontal boxes by defaults
-        return boxes.new_zeros(0, 4)
+        # Preserve the tensor box dimension (4 for hbox, 5 for rbox).
+        return boxes.new_zeros(0, boxes.size(-1))
 
 
 def bbox_xyxy_to_cxcyah(bboxes: torch.Tensor) -> torch.Tensor:

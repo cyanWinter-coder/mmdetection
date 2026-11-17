@@ -3,6 +3,7 @@ from .base_bbox_coder import BaseBBoxCoder
 from .bucketing_bbox_coder import BucketingBBoxCoder
 from .delta_xywh_bbox_coder import (DeltaXYWHBBoxCoder,
                                     DeltaXYWHBBoxCoderForGLIP)
+from .delta_xywht_rbbox_coder import DeltaXYWHTRBBoxCoder
 from .distance_point_bbox_coder import DistancePointBBoxCoder
 from .legacy_delta_xywh_bbox_coder import LegacyDeltaXYWHBBoxCoder
 from .pseudo_bbox_coder import PseudoBBoxCoder
@@ -12,5 +13,6 @@ from .yolo_bbox_coder import YOLOBBoxCoder
 __all__ = [
     'BaseBBoxCoder', 'PseudoBBoxCoder', 'DeltaXYWHBBoxCoder',
     'LegacyDeltaXYWHBBoxCoder', 'TBLRBBoxCoder', 'YOLOBBoxCoder',
-    'BucketingBBoxCoder', 'DistancePointBBoxCoder', 'DeltaXYWHBBoxCoderForGLIP'
+    'BucketingBBoxCoder', 'DistancePointBBoxCoder',
+    'DeltaXYWHBBoxCoderForGLIP', 'DeltaXYWHTRBBoxCoder'
 ]

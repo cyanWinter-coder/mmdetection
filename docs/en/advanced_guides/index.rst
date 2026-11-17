@@ -6,6 +6,7 @@ Basic Concepts
 
    data_flow.md
    structures.md
+   rotated_box_iou_nms.md
    models.md
    datasets.md
    transforms.md
